@@ -7,9 +7,6 @@ from pydantic import BaseModel
 from starlette.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-class Bruh(BaseModel):
-    hello: str
-
 def get_database_session():
     try:
         db = SessionLocal()
@@ -50,16 +47,55 @@ async def login(
     db_user = db.query(model.User).filter(model.User.username == username,model.User.password == password).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    return db_user
+    return {}
 
 @app.post('/register')
 async def register( 
+    fullname : Annotated[str, Form()],
     username : Annotated[str, Form()],
     password : Annotated[str, Form()],
+    email : Annotated[str, Form()],
+    phone : Annotated[int, Form()],
+
     db : Session = Depends(get_database_session)
 ):
-    register = model.User(username = username, password = password)
+    register = model.User(username = username, password = password, email = email, phone = phone , fullname = fullname)
     db.add(register)
     db.commit()
     
     return {}
+
+@app.post('/add-books')
+async def addbooks(
+    username :Annotated[str, Form()],
+    bookname : Annotated[str, Form()],
+    rating :Annotated[str, Form()],
+    status : Annotated[str, Form()],
+    db : Session = Depends(get_database_session)
+):
+    book = model.Book(username = username, book_name = bookname,  rating = rating, status = status)
+    db.add(book)
+    db.commit()
+
+    return{}
+
+@app.post('/get-books')
+async def getbooks(
+    username : Annotated[str, Form()],
+    db : Session = Depends(get_database_session)
+):
+    list = []
+    books = db.query(model.Book).filter(model.Book.username == username).all()
+    for i in books:
+        list.append(i)
+    return list
+
+@app.post('/profile')
+async def profile(
+    username : Annotated[str, Form()],
+    db : Session = Depends(get_database_session)
+):
+    db_user = db.query(model.User).filter(model.User.username == username).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
