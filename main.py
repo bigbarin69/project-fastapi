@@ -47,7 +47,8 @@ async def login(
     db_user = db.query(model.User).filter(model.User.username == username,model.User.password == password).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    return {}
+    loginjson = {"username" : username}
+    return loginjson
 
 @app.post('/register')
 async def register( 
@@ -62,8 +63,9 @@ async def register(
     register = model.User(username = username, password = password, email = email, phone = phone , fullname = fullname)
     db.add(register)
     db.commit()
-    
-    return {}
+    registerjson = {"username" : username}
+
+    return registerjson
 
 @app.post('/add-books')
 async def addbooks(
@@ -77,7 +79,7 @@ async def addbooks(
     db.add(book)
     db.commit()
 
-    return{}
+    return {}
 
 @app.post('/get-books')
 async def getbooks(
@@ -88,6 +90,8 @@ async def getbooks(
     books = db.query(model.Book).filter(model.Book.username == username).all()
     for i in books:
         list.append(i)
+    if list is None:
+        raise HTTPException(status_code=404, detail="User not found")
     return list
 
 @app.post('/profile')
